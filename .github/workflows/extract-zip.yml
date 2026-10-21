@@ -1,0 +1,44 @@
+name: Extract Seminary ZIP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP
+        run: |
+          ZIP_FILE="SeminarySystem.zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            ZIP_FILE=$(find . -maxdepth 2 -type f -iname '*.zip' \
+              ! -path './.git/*' | head -n 1)
+          fi
+
+          if [ -z "$ZIP_FILE" ] || [ ! -f "$ZIP_FILE" ]; then
+            echo "No ZIP file found in the repository."
+            exit 1
+          fi
+
+          mkdir extracted_project
+          unzip -o "$ZIP_FILE" -d extracted_project
+
+          echo "Extracted files:"
+          find extracted_project -maxdepth 3 -type f | head -100
+
+      - name: Commit extracted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add extracted_project
+          git commit -m "Extract SeminarySystem ZIP archive" || echo "No changes"
+          git push
